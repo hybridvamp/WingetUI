@@ -6,6 +6,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Newtonsoft.Json;
 using UniGetUI.Core.Data;
+using UniGetUI.Core.IconEngine;
 using UniGetUI.Core.Language;
 using UniGetUI.Core.Logging;
 using UniGetUI.Core.SettingsEngine;
@@ -87,15 +88,17 @@ namespace UniGetUI.Interface
             ThemeSelector.AddItem(CoreTools.AutoTranslated("Follow system color scheme"), "auto");
             ThemeSelector.ShowAddedItems();
 
+            // UI Section
+            DisableIconsOnPackageLists.Text = "[EXPERIMENTAL] " + CoreTools.Translate("Show package icons on package lists");
+
+
             // Backup Section
             BackupDirectoryLabel = (TextBlock)((StackPanel)ChangeBackupDirectory.Description).Children.ElementAt(0);
             ResetBackupDirectory = (HyperlinkButton)((StackPanel)ChangeBackupDirectory.Description).Children.ElementAt(1);
             OpenBackupDirectory = (HyperlinkButton)((StackPanel)ChangeBackupDirectory.Description).Children.ElementAt(2);
 
             EnablePackageBackupUI(Settings.Get("EnablePackageBackup"));
-
             ResetBackupDirectory.Content = CoreTools.Translate("Reset");
-
             OpenBackupDirectory.Content = CoreTools.Translate("Open");
 
             // Experimental Settings Section
@@ -110,11 +113,16 @@ namespace UniGetUI.Interface
                 ExtraSettingsCards.Add(Manager, []);
             }
 
-            /*ButtonCard WinGet_ResetSources = new() { Text = CoreTools.AutoTranslated("Reset Winget sources (might help if no packages are listed)"), ButtonText = CoreTools.AutoTranslated("Reset") };
-            WinGet_ResetSources.Click += (_, _) =>
+            ButtonCard WinGet_ResetWindowsPackageManager = new() {
+                Text = CoreTools.AutoTranslated("Reset WinGet") + $" ({CoreTools.Translate("This may help if no packages are listed")})",
+                ButtonText = CoreTools.AutoTranslated("Reset")
+            };
+
+            WinGet_ResetWindowsPackageManager.Click += (_, _) =>
             {
-                CoreTools.LaunchBatchFile(Path.Join(CoreData.UniGetUIExecutableDirectory, "Assets", "Utilities", "reset_winget_sources.cmd"), CoreTools.Translate("Resetting Winget sources - WingetUI"), RunAsAdmin: true);
-            };*/
+                DialogHelper.HandleBrokenWinGet();
+                // CoreTools.LaunchBatchFile(Path.Join(CoreData.UniGetUIExecutableDirectory, "Assets", "Utilities", "reset_winget_sources.cmd"), CoreTools.Translate("Resetting Winget sources - WingetUI"), RunAsAdmin: true);
+            };
 
             CheckboxCard WinGet_UseBundled = new()
             {
@@ -138,6 +146,7 @@ namespace UniGetUI.Interface
             };
 
             ExtraSettingsCards[PEInterface.WinGet].Add(WinGet_EnableTroubleshooter);
+            ExtraSettingsCards[PEInterface.WinGet].Add(WinGet_ResetWindowsPackageManager);
             ExtraSettingsCards[PEInterface.WinGet].Add(WinGet_UseBundled);
 
             ButtonCard Scoop_Install = new() { Text = CoreTools.AutoTranslated("Install Scoop"), ButtonText = CoreTools.AutoTranslated("Install") };
@@ -565,8 +574,14 @@ namespace UniGetUI.Interface
                 Logger.Error("An error occurred while deleting icon cache");
                 Logger.Error(ex);
             }
-            GeneralSettingsExpander.ShowRestartRequiredBanner();
+            InterfaceSettingsExpander.ShowRestartRequiredBanner();
+            PackageWrapper.ResetIconCache();
             LoadIconCacheSize();
+        }
+
+        private void DisableIconsOnPackageLists_OnStateChanged(object? sender, EventArgs e)
+        {
+            InterfaceSettingsExpander.ShowRestartRequiredBanner();
         }
     }
 }
